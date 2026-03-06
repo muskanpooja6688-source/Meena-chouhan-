@@ -4,8 +4,6 @@ from telegram.ext import ApplicationBuilder, MessageHandler, filters, ContextTyp
 import openai
 
 TELEGRAM_TOKEN = os.getenv("8690407504:AAG3CMzfkZOXCiWmQWqQ6VqbWkYumuSJD0Q")
-OPENAI_API_KEY = os.getenv("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")
-
 openai.api_key = OPENAI_API_KEY
 
 async def chat(update: Update, context: ContextTypes.DEFAULT_TYPE):
