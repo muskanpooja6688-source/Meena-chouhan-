@@ -1,102 +1,43 @@
-import telebot
-import random
-import requests
+import os
+from telegram import Update
+from telegram.ext import ApplicationBuilder, MessageHandler, filters, ContextTypes
+import openai
 
-TOKEN = "8690407504:AAG3CMzfkZOXCiWmQWqQ6VqbWkYumuSJD0Q"
+TELEGRAM_TOKEN = os.getenv("8690407504:AAG3CMzfkZOXCiWmQWqQ6VqbWkYumuSJD0Q")
+OPENAI_API_KEY = os.getenv("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")
 
-bot = telebot.TeleBot(TOKEN)
+openai.api_key = OPENAI_API_KEY
 
-# Random AI girl photos
-photos = [
-"https://thispersondoesnotexist.com/",
-"https://randomuser.me/api/portraits/women/44.jpg",
-"https://randomuser.me/api/portraits/women/68.jpg",
-"https://randomuser.me/api/portraits/women/12.jpg"
-]
+async def chat(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user_message = update.message.text
 
-# Chat replies
-replies = [
-"Hi 😊 main Meena hu",
-"Tum kya kar rahe ho?",
-"Mujhe selfie lena pasand hai 📸",
-"Tum kaha se ho?",
-"Main Ajmer se hu ❤️",
-"Tum mujhse chat karna chahte ho?",
-"Main abhi free hu 😊"
-]
-
-# Start command
-@bot.message_handler(commands=['start'])
-def start(message):
-
-    text = (
-    "Hi 😊 Mera naam *Meena Chouhan* hai\n"
-    "Age: 23\n"
-    "Location: Ajmer\n\n"
-    "Aap kya karna chahte ho?\n\n"
-    "1️⃣ Chat (₹10)\n"
-    "2️⃣ Video Call (₹75)\n\n"
-    "Type karo:\n"
-    "`chat` ya `video call`"
+    response = openai.ChatCompletion.create(
+        model="gpt-4o-mini",
+        messages=[
+            {
+                "role": "system",
+                "content": """
+                Your name is Meena.
+                You are a 22 year old friendly girl from Mumbai, India.
+                You speak in a casual Hindi + English (Hinglish) style.
+                You are sweet, funny and friendly while chatting.
+                """
+            },
+            {
+                "role": "user",
+                "content": user_message
+            }
+        ]
     )
 
-    bot.send_message(message.chat.id, text, parse_mode="Markdown")
+    reply = response.choices[0].message.content
+    await update.message.reply_text(reply)
 
+app = ApplicationBuilder().token(TELEGRAM_TOKEN).build()
 
-# Message handler
-@bot.message_handler(func=lambda message: True)
-def chat(message):
+app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, chat))
 
-    text = message.text.lower()
+print("Meena AI Bot Running...")
 
-    # Name
-    if "name" in text:
-        bot.send_message(message.chat.id,"Mera naam Meena Chouhan hai 😊")
+app.run_polling()
 
-    # Age
-    elif "age" in text:
-        bot.send_message(message.chat.id,"Meri age 23 hai")
-
-    # Address
-    elif "kaha" in text or "address" in text:
-        bot.send_message(message.chat.id,"Main Ajmer Rajasthan ki hu ❤️")
-
-    # Chat service
-    elif "chat" in text:
-        bot.send_photo(
-        message.chat.id,
-        photo=open("qr.png","rb"),
-        caption="Chat start karne ke liye ₹10 payment karo aur screenshot bhejo 😊"
-        )
-
-    # Video call service
-    elif "video call" in text or "call" in text:
-        bot.send_photo(
-        message.chat.id,
-        photo=open("qr.png","rb"),
-        caption="Video call ke liye ₹75 payment karo aur screenshot bhejo ❤️"
-        )
-
-    # Photo request
-    elif "photo" in text or "pic" in text or "selfie" in text:
-        bot.send_photo(message.chat.id, random.choice(photos))
-
-    # AI image generate
-    elif "ai photo" in text or "ai image" in text:
-
-        url = "https://image.pollinations.ai/prompt/beautiful%20indian%20girl%20selfie"
-
-        bot.send_photo(
-        message.chat.id,
-        url,
-        caption="Ye meri AI selfie hai 📸"
-        )
-
-    # Default reply
-    else:
-        bot.send_message(message.chat.id, random.choice(replies))
-
-
-print("Bot chal raha hai...")
-
-bot.polling()
